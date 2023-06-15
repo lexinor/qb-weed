@@ -1,4 +1,4 @@
-# qb-weed
+# weed
 Weed Growing For QB-Core
 
 # License

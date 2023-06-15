@@ -1,4 +1,4 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+
 local housePlants = {}
 local insideHouse = false
 local currentHouse = nil
@@ -19,8 +19,8 @@ DrawText3Ds = function(x, y, z, text)
     ClearDrawOrigin()
 end
 
-RegisterNetEvent('qb-weed:client:getHousePlants', function(house)
-    QBCore.Functions.TriggerCallback('qb-weed:server:getBuildingPlants', function(plants)
+RegisterNetEvent('weed:client:getHousePlants', function(house)
+    ESX.RegisterServerCallback('weed:server:getBuildingPlants', function(plants)
         currentHouse = house
         housePlants[currentHouse] = plants
         insideHouse = true
@@ -127,10 +127,10 @@ CreateThread(function()
                                         if plantData["plantStats"]["gender"] == "M" then
                                             amount = math.random(1, 2)
                                         end
-                                        TriggerServerEvent('qb-weed:server:harvestPlant', currentHouse, amount, plantData["plantSort"]["name"], plantData["plantStats"]["plantId"])
+                                        TriggerServerEvent('weed:server:harvestPlant', currentHouse, amount, plantData["plantSort"]["name"], plantData["plantStats"]["plantId"])
                                     end, function() -- Cancel
                                         ClearPedTasks(ped)
-                                        QBCore.Functions.Notify("Process Canceled", "error")
+                                        ESX.ShowNotification("Process Canceled", "error")
                                     end)
                                 end
                             end
@@ -148,10 +148,10 @@ CreateThread(function()
                                     flags = 16,
                                 }, {}, {}, function() -- Done
                                     ClearPedTasks(ped)
-                                    TriggerServerEvent('qb-weed:server:removeDeathPlant', currentHouse, plantData["plantStats"]["plantId"])
+                                    TriggerServerEvent('weed:server:removeDeathPlant', currentHouse, plantData["plantStats"]["plantId"])
                                 end, function() -- Cancel
                                     ClearPedTasks(ped)
-                                    QBCore.Functions.Notify( Lang:t('error.process_canceled'), "error")
+                                    ESX.ShowNotification( Lang:t('error.process_canceled'), "error")
                                 end)
                             end
                         end
@@ -166,7 +166,7 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent('qb-weed:client:leaveHouse', function()
+RegisterNetEvent('weed:client:leaveHouse', function()
     despawnHousePlants()
     SetTimeout(1000, function()
         if currentHouse ~= nil then
@@ -177,11 +177,11 @@ RegisterNetEvent('qb-weed:client:leaveHouse', function()
     end)
 end)
 
-RegisterNetEvent('qb-weed:client:refreshHousePlants', function(house)
+RegisterNetEvent('weed:client:refreshHousePlants', function(house)
     if currentHouse ~= nil and currentHouse == house then
         despawnHousePlants()
         SetTimeout(100, function()
-            QBCore.Functions.TriggerCallback('qb-weed:server:getBuildingPlants', function(plants)
+            ESX.RegisterServerCallback('weed:server:getBuildingPlants', function(plants)
                 currentHouse = house
                 housePlants[currentHouse] = plants
                 spawnHousePlants()
@@ -190,11 +190,11 @@ RegisterNetEvent('qb-weed:client:refreshHousePlants', function(house)
     end
 end)
 
-RegisterNetEvent('qb-weed:client:refreshPlantStats', function()
+RegisterNetEvent('weed:client:refreshPlantStats', function()
     if insideHouse then
         despawnHousePlants()
         SetTimeout(100, function()
-            QBCore.Functions.TriggerCallback('qb-weed:server:getBuildingPlants', function(plants)
+            ESX.RegisterServerCallback('weed:server:getBuildingPlants', function(plants)
                 housePlants[currentHouse] = plants
                 spawnHousePlants()
             end, currentHouse)
@@ -202,7 +202,7 @@ RegisterNetEvent('qb-weed:client:refreshPlantStats', function()
     end
 end)
 
-RegisterNetEvent('qb-weed:client:placePlant', function(type, item)
+RegisterNetEvent('weed:client:placePlant', function(type, item)
     local ped = PlayerPedId()
     local plyCoords = GetOffsetFromEntityInWorldCoords(ped, 0, 0.75, 0)
     local plantData = {
@@ -232,22 +232,22 @@ RegisterNetEvent('qb-weed:client:placePlant', function(type, item)
 		LocalPlayer.state:set("inv_busy", false, true)
             }, {}, {}, function() -- Done
                 ClearPedTasks(ped)
-                TriggerServerEvent('qb-weed:server:placePlant', json.encode(plantData["plantCoords"]), type, currentHouse)
-                TriggerServerEvent('qb-weed:server:removeSeed', item.slot, type)
+                TriggerServerEvent('weed:server:placePlant', json.encode(plantData["plantCoords"]), type, currentHouse)
+                TriggerServerEvent('weed:server:removeSeed', item.slot, type)
             end, function() -- Cancel
                 ClearPedTasks(ped)
-                QBCore.Functions.Notify(Lang:t('error.process_canceled'), "error")
+                ESX.ShowNotification(Lang:t('error.process_canceled'), "error")
 		LocalPlayer.state:set("inv_busy", false, true)
             end)
         else
-            QBCore.Functions.Notify(Lang:t('error.cant_place_here'), 'error', 3500)
+            ESX.ShowNotification(Lang:t('error.cant_place_here'), 'error', 3500)
         end
     else
-        QBCore.Functions.Notify(Lang:t('error.not_safe_here'), 'error', 3500)
+        ESX.ShowNotification(Lang:t('error.not_safe_here'), 'error', 3500)
     end
 end)
 
-RegisterNetEvent('qb-weed:client:foodPlant', function()
+RegisterNetEvent('weed:client:foodPlant', function()
     if currentHouse ~= nil then
         if ClosestTarget ~= 0 then
             local ped = PlayerPedId()
@@ -278,7 +278,7 @@ RegisterNetEvent('qb-weed:client:foodPlant', function()
 
             if plyDistance < 1.0 then
                 if plantData["plantStats"]["food"] == 100 then
-                    QBCore.Functions.Notify(Lang:t('error.not_need_nutrition'), 'error', 3500)
+                    ESX.ShowNotification(Lang:t('error.not_need_nutrition'), 'error', 3500)
                 else
 		            LocalPlayer.state:set("inv_busy", true, true)
                     QBCore.Functions.Progressbar("plant_weed_plant", Lang:t('text.feeding_plant'), math.random(4000, 8000), false, true, {
@@ -295,18 +295,18 @@ RegisterNetEvent('qb-weed:client:foodPlant', function()
                     }, {}, {}, function() -- Done
                         ClearPedTasks(ped)
                         local newFood = math.random(40, 60)
-                        TriggerServerEvent('qb-weed:server:foodPlant', currentHouse, newFood, plantData["plantSort"]["name"], plantData["plantStats"]["plantId"])
+                        TriggerServerEvent('weed:server:foodPlant', currentHouse, newFood, plantData["plantSort"]["name"], plantData["plantStats"]["plantId"])
                     end, function() -- Cancel
                         ClearPedTasks(ped)
 			            LocalPlayer.state:set("inv_busy", false, true)
-                        QBCore.Functions.Notify(Lang:t('error.process_canceled'), "error")
+                        ESX.ShowNotification(Lang:t('error.process_canceled'), "error")
                     end)
                 end
             else
-                QBCore.Functions.Notify(Lang:t('error.cant_place_here'), "error")
+                ESX.ShowNotification(Lang:t('error.cant_place_here'), "error")
             end
         else
-            QBCore.Functions.Notify(Lang:t('error.cant_place_here'), "error")
+            ESX.ShowNotification(Lang:t('error.cant_place_here'), "error")
         end
     end
 end)
